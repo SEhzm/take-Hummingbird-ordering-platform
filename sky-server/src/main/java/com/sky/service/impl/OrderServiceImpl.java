@@ -166,7 +166,16 @@ public class OrderServiceImpl implements OrderService {
         //发现没有将支付时间 check_out属性赋值，所以在这里更新
         LocalDateTime check_out_time = LocalDateTime.now();
         orderMapper.updateStatus(OrderStatus, OrderPaidStatus, check_out_time, ordersPaymentDTO.getOrderNumber());
+        //假装支付成功，
+        //通过websocket推送消息
 
+        Map map =new HashMap<>();
+        map.put("type",1);
+        map.put("orderId",orderMapper.getByNum(ordersPaymentDTO.getOrderNumber()).getId());
+        map.put("content","订单号"+ordersPaymentDTO.getOrderNumber());
+
+        String jsonString = JSON.toJSONString(map);
+        webSocketServer.sendToAllClient(jsonString);
         return vo;
     }
 
@@ -176,7 +185,7 @@ public class OrderServiceImpl implements OrderService {
      * @param outTradeNo
      */
     public void paySuccess(String outTradeNo) {
-
+        log.info("用户支付成功");
         // 根据订单号查询订单
         Orders ordersDB = orderMapper.getByNumber(outTradeNo);
 
@@ -436,7 +445,6 @@ public class OrderServiceImpl implements OrderService {
 
     /**
      * 完成订单
-     *
      * @param id
      */
     @Override
@@ -451,6 +459,29 @@ public class OrderServiceImpl implements OrderService {
                 .id(ordersDB.getId())
                 .build();
         orderMapper.update(orders);
+    }
+
+    /**
+     * 催单
+     * @param id
+     */
+    @Override
+    public void reminder(Long id) {
+
+        // 根据订单号查询订单
+        Orders ordersDB = orderMapper.getById(id);
+
+        if (ordersDB ==null){
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+        //通过websocket推送消息
+        Map map =new HashMap<>();
+        map.put("type",2);
+        map.put("orderId",ordersDB.getId());
+        map.put("content","订单号"+ordersDB.getNumber());
+
+        String jsonString = JSON.toJSONString(map);
+        webSocketServer.sendToAllClient(jsonString);
     }
 
 

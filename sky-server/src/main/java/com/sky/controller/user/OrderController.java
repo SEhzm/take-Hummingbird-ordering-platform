@@ -24,6 +24,13 @@ public class OrderController {
     @Autowired
     private OrderService orderService;
 
+    @GetMapping("/reminder/{id}")
+    @ApiOperation("催单")
+    public Result reminder(@PathVariable("id") Long id){
+        orderService.reminder(id);
+        return Result.success();
+    }
+
     /**
      * 用户下单
       * @param ordersSubmitDTO
